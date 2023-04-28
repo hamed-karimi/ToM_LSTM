@@ -33,7 +33,7 @@ def get_data_loader(utility):
 
 
 def change_require_grads(model, goal_grad, action_grad):
-    for params in model.parameters():
+    for params in model.goal_net.parameters():
         params.requires_grad = goal_grad
     for params in model.fc_action.parameters():
         params.requires_grad = action_grad
@@ -42,60 +42,70 @@ def change_require_grads(model, goal_grad, action_grad):
 def train(train_data_generator):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     utility = Utilities.Utilities()
+    params = utility.params
     writer = SummaryWriter()
-
-    agent_appearance = torch.tensor(get_agent_appearance(),
-                                    dtype=torch.float32)  # add one dimension for batch
     factory = ObjectFactory(utility=utility)
-    tom_net = factory.get_tom_net().to(device)
+    tom_net = factory.get_tom_net()
     optimizer = torch.optim.Adam(tom_net.parameters(),
                                  lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+
     global_index = 0
 
-    for epoch in range(utility.params.NUM_EPOCHS):
+    for epoch in range(params.NUM_EPOCHS):
+        epoch_goal_loss = 0
+        epoch_all_actions_loss = 0
+        n_batch = 0
+        seq_start = True
+        goal_criterion = nn.NLLLoss(reduction='mean', weight=torch.tensor([4.5, 4.5, 1]))
+        action_criterion = nn.NLLLoss(reduction='mean')
         for train_idx, data in enumerate(train_data_generator):
             # environment_batch.shape: [batch_size, step_num, objects+agent(s), height, width]
             # target_goal: 2 is staying
-            environments_batch, goals_batch, actions_batch, needs_batch = data
-            agent_appearance_batch = agent_appearance.repeat(environments_batch.shape[0], 1, 1, 1)
+            environments_batch, goals_batch, actions_batch, needs_batch, goal_reached_batch = data
+            environments_batch = environments_batch.to(device)
+            goals_batch = goals_batch.to(device)
+            actions_batch = actions_batch.to(device)
+            needs_batch = needs_batch.to(device)
+            goal_reached_batch = goal_reached_batch.to(device)
+
+            # agent_appearance_batch = agent_appearance.repeat(environments_batch.shape[0], 1, 1, 1)
+            change_require_grads(tom_net, goal_grad=True, action_grad=True)
             step_num = environments_batch.shape[1]
-            batch_goal_loss = 0
-            batch_action_loss = 0
-            seq_start = True
-            criterion = nn.NLLLoss()
-            for step in range(step_num):
-                optimizer.zero_grad()
-                goals, goals_prob, actions, actions_prob = tom_net(environments_batch[:, step, :, :, :],
-                                                                   agent_appearance_batch,
-                                                                   seq_start)
-                seq_start = False
+            batch_num = environments_batch.shape[0]
+            optimizer.zero_grad()
 
-                change_require_grads(tom_net, goal_grad=True, action_grad=False)
+            goals, goals_prob, actions, actions_prob = tom_net(environments_batch,
+                                                               reinitialize_mental=seq_start)
+            # 2 losses:
+            # 1. goal loss
+            # 2. action loss
 
-                # loss of goal nets
-                goal_loss = criterion(goals_prob, goals_batch[:, step].long())
-                goal_loss.backward(retain_graph=True)
+            # action loss
+            change_require_grads(tom_net, goal_grad=False, action_grad=True)
+            action_loss = action_criterion(actions_prob.reshape(batch_num, actions_prob.shape[2], step_num),
+                                           actions_batch.long())
+            action_loss.backward(retain_graph=True)
 
-                # loss of action net
-                change_require_grads(tom_net, goal_grad=False, action_grad=True)
-                correct_goals_mask = (torch.argmax(goals_prob, dim=1) == goals_batch[:, step])
-                correct_goal_indices = torch.argwhere(correct_goals_mask).squeeze()
-                action_loss = criterion(actions_prob[correct_goal_indices, :], actions_batch[correct_goal_indices, step].long())
-                action_loss.backward()
+            # goal loss
+            change_require_grads(tom_net, goal_grad=True, action_grad=False)
+            stayed_or_goal_reached = torch.logical_or(goal_reached_batch, torch.eq(goals_batch, params.GOAL_NUM))
+            goal_loss = goal_criterion(goals_prob[stayed_or_goal_reached],
+                                       goals_batch[stayed_or_goal_reached].long())
+            goal_loss.backward()
 
-                optimizer.step()
+            optimizer.step()
 
-                batch_goal_loss += goal_loss.item()
-                batch_action_loss += action_loss.item()
-                # tom_net.mental_net.h_0.detach_()
-                # tom_net.mental_net.c_0.detach_()
+            epoch_all_actions_loss += action_loss.item()
+            epoch_goal_loss += goal_loss.item()
 
-            writer.add_scalar("Loss/goal", batch_goal_loss / step_num, global_index)
-            writer.add_scalar("Loss/action", batch_action_loss / step_num, global_index)
+            n_batch += 1
+            print('epoch: ', epoch, ', batch: ', train_idx)
+
+            writer.add_scalar("Loss/goal", epoch_goal_loss / n_batch, global_index)
+            writer.add_scalar("Loss/all_action", epoch_all_actions_loss / n_batch, global_index)
             global_index += 1
 
-            print('epoch: ', epoch, ', batch: ', train_idx)
     writer.flush()
     if not os.path.exists('./Model'):
         os.mkdir('./Model')
-    torch.save(tom_net.state_dict(), './Model/ToM_RNN.pt')
+    torch.save(tom_net.cpu().state_dict(), './Model/ToM_RNN.pt')

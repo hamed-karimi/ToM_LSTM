@@ -24,8 +24,8 @@ def test(test_data_generator):
     if not os.path.exists(test_figures_dir):
         os.mkdir(test_figures_dir)
 
-    agent_appearance = torch.tensor(get_agent_appearance(),
-                                    dtype=torch.float32)  # add one dimension for batch
+    # agent_appearance = torch.tensor(get_agent_appearance(),
+    #                                 dtype=torch.float32)  # add one dimension for batch
     factory = ObjectFactory(utility=utility)
     tom_net = load_tom_net(factory, utility).to(device)
     global_index = 0
@@ -37,16 +37,21 @@ def test(test_data_generator):
     for test_idx, data in enumerate(test_data_generator):
         # environment_batch.shape: [batch_size, step_num, objects+agent(s), height, width]
         # target_goal: 2 is staying
-        environments_batch, goals_batch, actions_batch, needs_batch = data
-        agent_appearance_batch = agent_appearance.repeat(environments_batch.shape[0], 1, 1, 1)
+        environments_batch, goals_batch, actions_batch, needs_batch, reached_goal_batch = data
+
+        environments_batch = environments_batch[:, :100, :, :, :]
+        goals_batch = goals_batch[:, :100]
+        actions_batch = actions_batch[:, :100]
+        needs_batch = needs_batch[:, :100, :]
+        reached_goal_batch = reached_goal_batch[:, :100]
+
         step_num = environments_batch.shape[1]
 
         seq_start = True
 
         for step in range(step_num):
-            print(global_index)
-            goals, goals_prob, actions, actions_prob = tom_net(environments_batch[:, step, :, :, :],
-                                                               agent_appearance_batch,
+            # print(global_index)
+            goals, goals_prob, actions, actions_prob = tom_net(environments_batch[:, step, :, :, :].unsqueeze(dim=1),
                                                                seq_start)
             seq_start = False
 

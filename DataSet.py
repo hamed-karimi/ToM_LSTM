@@ -16,18 +16,13 @@ class AgentActionDataSet(Dataset):
         self.utility = Utilities.Utilities()
         params = self.utility.get_params()
         self.dir_path = params.DATA_DIRECTORY
-        # environment_file_object = open(join(self.dir_path, 'environments.pt'), 'rb')
-        # goal_file_object = open(join(self.dir_path, 'selected_goals.pt'), 'rb')
-        # actions_file_object = open(join(self.dir_path, 'actions.pt'), 'rb')
 
         self.environments = torch.load(join(self.dir_path, 'environments.pt'))
         self.target_goals = torch.load(join(self.dir_path, 'selected_goals.pt'))
         self.target_actions = torch.load(join(self.dir_path, 'actions.pt'))
         self.target_needs = torch.load(join(self.dir_path, 'needs.pt'))
-
-        # environment_file_object.close()
-        # goal_file_object.close()
-        # actions_file_object.close()
+        self.reached_goal = torch.load(join(self.dir_path, 'goal_reached.pt'))
+        print('dataset size: ', self.environments.shape[:2])
 
     def __len__(self):
         """Denotes the total number of samples"""
@@ -37,14 +32,8 @@ class AgentActionDataSet(Dataset):
         return self.environments[episode, :, :, :, :], \
             self.target_goals[episode, :], \
             self.target_actions[episode, :], \
-            self.target_needs[episode, :, :]
-        # upper_bound = min(self.__len__()-episode, 100)
-        # lower_bound = min(upper_bound, 10)
-        # sequence_len = random.randint(lower_bound, upper_bound)
-        # return self.environments[episode: episode+sequence_len],\
-        #     self.target_goals[episode: episode+sequence_len],\
-        #     self.target_actions[episode: episode+sequence_len], \
-        #     sequence_len
+            self.target_needs[episode, :, :], \
+            self.reached_goal[episode, :]
 
 
 def get_agent_appearance():

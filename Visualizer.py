@@ -27,9 +27,9 @@ def visualizer(fig_height, fig_width, env_input, true_goals, true_actions, true_
         agent_location = torch.argwhere(env_input[step][0, 0, :, :]).squeeze()
         object_locations = torch.argwhere(env_input[step][0, 1:, :, :]).squeeze()
 
-        step_pred_action = torch.argmax(pred_actions[step], dim=1).item()
-        step_pred_goal = torch.argmax(pred_goals[step], dim=1).item()
-
+        step_pred_action = torch.argmax(pred_actions[step].squeeze()).item()
+        step_pred_goal = torch.argmax(pred_goals[step].squeeze()).item()
+        print(step_pred_action)
         # agent:
         ax[fig_row, fig_col].scatter(agent_location[1].item(), agent_location[0].item(),
                                      marker='$\U0001F601$', s=40, facecolor='#8A2BE2')
@@ -44,7 +44,8 @@ def visualizer(fig_height, fig_width, env_input, true_goals, true_actions, true_
 
         ax[fig_row, fig_col].arrow(agent_location[1].item(), agent_location[0].item() - scale,
                                    all_actions[true_actions[step]][1]/2, all_actions[true_actions[step]][0]/2,
-                                   color=color_options[true_goals[step]], head_width=.1)
+                                   color=color_options[true_goals[step]], head_width=.1, linestyle=':',
+                                   width=0.005, alpha=0.3)
 
         ax[fig_row, fig_col].set_title(get_figure_title(objects_color_name, true_needs[step]), fontsize=10)
 
@@ -61,6 +62,7 @@ def visualizer(fig_height, fig_width, env_input, true_goals, true_actions, true_
 
         ax[fig_row, fig_col].set(adjustable='box')
 
-    plt.tight_layout(pad=0.4, w_pad=6, h_pad=1)
+    fig.suptitle('Predicted: ->  Truth: -->\n', y=.99)
+    plt.tight_layout(pad=0.4, w_pad=6, h_pad=.8)
 
     return fig, ax
