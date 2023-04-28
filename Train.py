@@ -91,6 +91,10 @@ def train(train_data_generator):
             stayed_or_goal_reached = torch.logical_or(goal_reached_batch, torch.eq(goals_batch, params.GOAL_NUM))
             print(goals_prob[stayed_or_goal_reached].device)
             print(goals_batch[stayed_or_goal_reached].long().device)
+            for p in tom_net.parameters():
+                print(p.device)
+            print(stayed_or_goal_reached.device)
+            print(stayed_or_goal_reached.device)
             goal_loss = goal_criterion(goals_prob[stayed_or_goal_reached],
                                        goals_batch[stayed_or_goal_reached].long())
             goal_loss.backward()
