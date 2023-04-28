@@ -60,10 +60,6 @@ class ToMNet(nn.Module):
         actions = torch.stack(action_seq, dim=1)
         actions_prob = torch.stack(action_prob_seq, dim=1)
 
-        print('goal net: ')
-        for p in self.goal_net.parameters():
-            print(p.device)
-
         return goals, goals_prob, actions, actions_prob
 
     def forward_action_layer(self, predefined_goals, goal_reached):

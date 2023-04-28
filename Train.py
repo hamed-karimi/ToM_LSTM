@@ -56,7 +56,7 @@ def train(train_data_generator):
         epoch_all_actions_loss = 0
         n_batch = 0
         seq_start = True
-        goal_criterion = nn.NLLLoss(reduction='mean', weight=torch.tensor([4.5, 4.5, 1]))
+        goal_criterion = nn.NLLLoss(reduction='mean', weight=torch.tensor([4.5, 4.5, 1]).to(device))
         action_criterion = nn.NLLLoss(reduction='mean')
         for train_idx, data in enumerate(train_data_generator):
             # environment_batch.shape: [batch_size, step_num, objects+agent(s), height, width]
