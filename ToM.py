@@ -29,7 +29,7 @@ class ToMNet(nn.Module):
 
         # environment is a tensor containing the steps of the whole episode
         if recalculate_mental:
-            return self.forward_from_new_mental(environment.to(), reinitialize_mental)
+            return self.forward_from_new_mental(environment, reinitialize_mental)
         else:
             return self.forward_action_layer(predefined_goals, goal_reached)
 

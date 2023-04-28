@@ -5,6 +5,7 @@ import torch
 class MentalNet(nn.Module):
     def __init__(self, env_size, states_num, layers_num):
         super(MentalNet, self).__init__()
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.h_0 = None
         self.c_0 = None
         self.num_layers = layers_num
@@ -19,8 +20,10 @@ class MentalNet(nn.Module):
         # maybe we should save h_0 and c_0 for next predictions, as the sequence is basically infinite
         batch_size = environment.shape[0]
         if reinitialize:
-            self.h_0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), requires_grad=True)
-            self.c_0 = torch.zeros((self.num_layers, batch_size, self.hidden_size), requires_grad=True)
+            self.h_0 = torch.zeros((self.num_layers, batch_size, self.hidden_size),
+                                   requires_grad=True, device=self.device)
+            self.c_0 = torch.zeros((self.num_layers, batch_size, self.hidden_size),
+                                   requires_grad=True, device=self.device)
 
         # combined = torch.cat((mental_trait, environment), dim=2)  #.unsqueeze(dim=1)  # batch_size * seq_len * features
         mental_states, (h_n, c_n) = self.lstm(environment, (self.h_0, self.c_0))
