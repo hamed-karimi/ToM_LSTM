@@ -29,7 +29,7 @@ def visualizer(fig_height, fig_width, env_input, true_goals, true_actions, true_
 
         step_pred_action = torch.argmax(pred_actions[step].squeeze()).item()
         step_pred_goal = torch.argmax(pred_goals[step].squeeze()).item()
-        print(step_pred_action)
+        print(pred_actions[step])
         # agent:
         ax[fig_row, fig_col].scatter(agent_location[1].item(), agent_location[0].item(),
                                      marker='$\U0001F601$', s=40, facecolor='#8A2BE2')
@@ -40,22 +40,23 @@ def visualizer(fig_height, fig_width, env_input, true_goals, true_actions, true_
         scale = 0.2
         ax[fig_row, fig_col].arrow(agent_location[1].item(), agent_location[0].item() + scale,
                                    all_actions[step_pred_action][1]/2, all_actions[step_pred_action][0]/2,
-                                   color=color_options[step_pred_goal], head_width=.1)
+                                   color=color_options[step_pred_goal], head_width=.1, linestyle='-',
+                                   width=0.01, alpha=1)
 
         ax[fig_row, fig_col].arrow(agent_location[1].item(), agent_location[0].item() - scale,
                                    all_actions[true_actions[step]][1]/2, all_actions[true_actions[step]][0]/2,
                                    color=color_options[true_goals[step]], head_width=.1, linestyle=':',
-                                   width=0.005, alpha=0.3)
+                                   width=0.005, alpha=.3)
 
         ax[fig_row, fig_col].set_title(get_figure_title(objects_color_name, true_needs[step]), fontsize=10)
 
-        ax[fig_row, fig_col].set_xticks(list(np.arange(env_width, dtype=np.float32)))
-        ax[fig_row, fig_col].xaxis.set_major_locator(plt.NullLocator())
-        ax[fig_row, fig_col].xaxis.set_major_locator(plt.NullLocator())
+        ax[fig_row, fig_col].set_xticks(list(np.arange(-1, env_width+1, dtype=np.float32)))
+        # ax[fig_row, fig_col].xaxis.set_major_locator(plt.NullLocator())
+        # ax[fig_row, fig_col].xaxis.set_major_locator(plt.NullLocator())
 
-        ax[fig_row, fig_col].set_yticks(list(np.arange(env_height, dtype=np.float32)))
-        ax[fig_row, fig_col].yaxis.set_major_locator(plt.NullLocator())
-        ax[fig_row, fig_col].yaxis.set_major_locator(plt.NullLocator())
+        ax[fig_row, fig_col].set_yticks(list(np.arange(-1, env_height+1, dtype=np.float32)))
+        # ax[fig_row, fig_col].yaxis.set_major_locator(plt.NullLocator())
+        # ax[fig_row, fig_col].yaxis.set_major_locator(plt.NullLocator())
 
         ax[fig_row, fig_col].tick_params(length=0)
         ax[fig_row, fig_col].invert_yaxis()

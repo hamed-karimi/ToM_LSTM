@@ -82,7 +82,7 @@ def train(train_data_generator):
 
             # action loss
             change_require_grads(tom_net, goal_grad=False, action_grad=True)
-            action_loss = action_criterion(actions_prob.reshape(batch_num, actions_prob.shape[2], step_num),
+            action_loss = action_criterion(actions_prob.reshape(batch_num, -1),
                                            actions_batch.long())
             action_loss.backward(retain_graph=True)
 
