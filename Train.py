@@ -56,22 +56,30 @@ def train(train_data_generator):
         epoch_all_actions_loss = 0
         n_batch = 0
         seq_start = True
-        goal_criterion = nn.NLLLoss(reduction='mean', weight=torch.tensor([4.5, 4.5, 1]).to(device))
+        # goal_criterion = nn.NLLLoss(reduction='mean', weight=torch.tensor([4.5, 4.5, 1]).to(device))
+        goal_criterion = nn.CrossEntropyLoss(reduction='mean', weight=torch.tensor([4.5, 4.5, 1]).to(device))
         action_criterion = nn.NLLLoss(reduction='mean')
         for train_idx, data in enumerate(train_data_generator):
             # environment_batch.shape: [batch_size, step_num, objects+agent(s), height, width]
             # target_goal: 2 is staying
-            environments_batch, goals_batch, actions_batch, needs_batch, goal_reached_batch = data
+            environments_batch, \
+                goals_batch, \
+                actions_batch, \
+                needs_batch, \
+                goal_reached_batch, \
+                targets_prob_batch, \
+                has_target_dist_batch = data
+
             environments_batch = environments_batch.to(device)
             goals_batch = goals_batch.to(device)
             actions_batch = actions_batch.to(device)
             needs_batch = needs_batch.to(device)
             goal_reached_batch = goal_reached_batch.to(device)
-
+            targets_prob_batch = targets_prob_batch.to(device)
+            has_target_dist_batch = has_target_dist_batch.to(device)
             # agent_appearance_batch = agent_appearance.repeat(environments_batch.shape[0], 1, 1, 1)
+
             change_require_grads(tom_net, goal_grad=True, action_grad=True)
-            step_num = environments_batch.shape[1]
-            batch_num = environments_batch.shape[0]
             optimizer.zero_grad()
 
             goals, goals_prob, actions, actions_prob = tom_net(environments_batch,
@@ -88,9 +96,10 @@ def train(train_data_generator):
 
             # goal loss
             change_require_grads(tom_net, goal_grad=True, action_grad=False)
-            stayed_or_goal_reached = torch.logical_or(goal_reached_batch, torch.eq(goals_batch, params.GOAL_NUM))
-            goal_loss = goal_criterion(goals_prob[stayed_or_goal_reached],
-                                       goals_batch[stayed_or_goal_reached].long())
+
+            # stayed_or_goal_reached = torch.logical_or(goal_reached_batch, torch.eq(goals_batch, params.GOAL_NUM))
+            goal_loss = goal_criterion(goals_prob[has_target_dist_batch, :],
+                                       targets_prob_batch[has_target_dist_batch, :])
             goal_loss.backward()
 
             optimizer.step()
