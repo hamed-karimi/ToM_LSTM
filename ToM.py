@@ -21,8 +21,7 @@ class ToMNet(nn.Module):
         self.mental_net = factory.get_mental_net()
         self.goal_net = factory.get_goal_net()
         self.softmax = nn.LogSoftmax(dim=1)
-        self.fc_action = nn.Linear(#self.params.GOAL_NUM + 1 +  # +1 for staying
-                                   self.params.MENTAL_STATES_NUM, 9)
+        self.action_net = factory.get_action_net()
 
     def forward(self, environment: torch.Tensor, reinitialize_mental, recalculate_mental=True,
                 predefined_goals=torch.empty(0), goal_reached=torch.empty(0)):
@@ -46,11 +45,11 @@ class ToMNet(nn.Module):
         goal_seq, goal_prob_seq = [], []
         action_seq, action_prob_seq = [], []
         for step in range(episode_len):
-            step_goal = self.goal_net(F.relu(self.mental_states[:, step, :]))
+            step_goal = self.goal_net(self.mental_states[:, step, :])
             goal_seq.append(step_goal)
             goal_prob_seq.append(self.softmax(step_goal))
 
-            step_action = self.fc_action(F.relu(self.mental_states[:, step, :]))
+            step_action = self.action_net(self.mental_states[:, step, :])
             action_seq.append(step_action)
             action_prob_seq.append(self.softmax(step_action))
 

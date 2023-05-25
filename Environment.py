@@ -21,9 +21,9 @@ class EnvironmentNet(nn.Module):
         self.env_characteristic_num = env_character_num
         self.conv1 = nn.Conv2d(goal_num+1, 32, kernel_size[0])  # 1 input image channel, 8 output channels, 3x3 square
         # convolution kernel
-        self.conv2 = nn.Conv2d(32, 16, kernel_size[1])  # 8 channels from the conv1 layer, 16 output channels,
+        self.conv2 = nn.Conv2d(32, 24, kernel_size[1])  # 8 channels from the conv1 layer, 16 output channels,
         # 3x3 square convolution kernel
-        self.fc1 = nn.Linear(16, self.env_characteristic_num)  # 4*4 from image
+        self.fc1 = nn.Linear(24, self.env_characteristic_num)  # 4*4 from image
         # dimension
 
     def forward(self, x):

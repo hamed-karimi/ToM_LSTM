@@ -3,6 +3,7 @@ from Environment import EnvironmentNet
 from Traits import TraitsNet
 from Mental import MentalNet
 from Goal import GoalNet
+from Action import ActionNet
 from ToM import ToMNet
 import torch.nn.init as init
 
@@ -53,6 +54,11 @@ class ObjectFactory:
                            goal_num=self.params.GOAL_NUM).to(self.device)
         goal_net.apply(weights_init_orthogonal)
         return goal_net
+
+    def get_action_net(self):
+        action_net = ActionNet(states_size=self.params.MENTAL_STATES_NUM)
+        action_net.apply(weights_init_orthogonal)
+        return action_net
 
     def get_tom_net(self):
         self.tom_net = ToMNet().to(self.device)

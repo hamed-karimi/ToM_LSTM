@@ -71,10 +71,11 @@ class AgentActionDataSet(Dataset):
                         prob[seen_target_goal] *= self.params.DISCOUNT_FACTOR
                         prob[torch.arange(self.params.GOAL_NUM+1) != seen_target_goal] *= (1-self.params.DISCOUNT_FACTOR)
 
-                    target_goals_prob[episode, backward, :-1] = softmax(prob[:-1]) # * 1/agent_object_distances[:, :-1])
+                    target_goals_prob[episode, backward, :-1] = softmax(prob[:-1])  # * 1/agent_object_distances[:, :-1])
                     has_target_dist[episode, backward] = True
                     backward -= 1
         return target_goals_prob, has_target_dist
+
 
 def get_collection_distances(map1, map2):
     p1 = torch.argwhere(map1)
