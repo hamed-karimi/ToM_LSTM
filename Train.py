@@ -35,7 +35,7 @@ def get_data_loader(utility):
 def change_require_grads(model, goal_grad, action_grad):
     for params in model.goal_net.parameters():
         params.requires_grad = goal_grad
-    for params in model.fc_action.parameters():
+    for params in model.action_net.parameters():
         params.requires_grad = action_grad
 
 
